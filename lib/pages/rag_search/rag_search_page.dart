@@ -4,65 +4,50 @@ import 'package:provider/provider.dart';
 import '../../app/theme/app_theme.dart';
 import '../../features/rag_search/domain/rag_ranker.dart';
 import '../../services/secretary_session.dart';
+import '../../shared/widgets/conversation_box.dart';
 import '../../shared/widgets/feature_scaffold.dart';
-import '../../shared/widgets/fun_feature_button.dart';
-import '../../shared/widgets/scroll_paged_list.dart';
 
-class RagSearchPage extends StatefulWidget {
+class RagSearchPage extends StatelessWidget {
   const RagSearchPage({super.key});
 
   @override
-  State<RagSearchPage> createState() => _RagSearchPageState();
-}
-
-class _RagSearchPageState extends State<RagSearchPage> {
-  final _controller = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final docs = context.watch<SecretarySession>().ofKind('rag');
-    final hits = RagRanker.rank(_query, docs);
+    final session = context.watch<SecretarySession>();
+    final thread = session
+        .ofKind('rag')
+        .where((record) => record.title == '나' || record.title == 'MYB')
+        .toList();
+    final docs = session
+        .ofKind('rag')
+        .where((record) => record.title != '나' && record.title != 'MYB')
+        .toList();
     return FeatureScaffold(
       title: 'RAG 검색',
-      subtitle: '저장해 둔 문장 안에서 찾아요',
-      emoji: '🔍',
+      subtitle: '필요한 정보를 빠르게 찾아드립니다.',
+      icon: Icons.search,
       accent: AppTheme.lavender,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _controller,
-            decoration: const InputDecoration(hintText: '찾고 싶은 단어를 입력'),
-            onSubmitted: (value) => setState(() => _query = value.trim()),
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FunActionButton(
-              label: '찾아보기',
-              emoji: '🌈',
-              onPressed: () => setState(() => _query = _controller.text.trim()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ScrollPagedList<RankedHit>(
-              items: hits,
-              emptyMessage: _query.isEmpty
-                  ? 'PDF나 대화를 요약하면 검색 재료가 생겨요.'
-                  : '이 단어와 겹치는 기록이 없어요.',
-              itemBuilder: (_, hit, _) =>
-                  RecordTile(record: hit.record, tint: AppTheme.lavender),
-            ),
-          ),
-        ],
+      child: ConversationBox(
+        records: thread,
+        hint: '찾고 싶은 내용을 말하거나 적어 보세요',
+        tint: AppTheme.lavender,
+        emptyMessage: 'PDF나 대화를 요약하면 검색 재료가 생겨요.',
+        onSubmit: (text) => session.replyTurn(
+          kind: 'rag',
+          text: text,
+          answer: (text, history) async {
+            final hits = RagRanker.rank(text, docs);
+            if (hits.isEmpty) {
+              final follow = history.isEmpty
+                  ? ''
+                  : '\n\n이전 검색도 이어서 봤지만 겹치는 문장이 없어요.';
+              return '이 단어와 겹치는 기록이 없어요.$follow';
+            }
+            return hits
+                .take(3)
+                .map((hit) => '${hit.record.title}\n${hit.record.body}')
+                .join('\n\n');
+          },
+        ),
       ),
     );
   }

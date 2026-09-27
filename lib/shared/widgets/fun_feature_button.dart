@@ -11,10 +11,12 @@ class FunFeatureButton extends StatefulWidget {
     required this.color,
     required this.blurb,
     required this.onTap,
+    this.icon,
   });
 
   final String label;
   final String emoji;
+  final IconData? icon;
   final Color color;
   final String blurb;
   final VoidCallback onTap;
@@ -58,32 +60,42 @@ class _FunFeatureButtonState extends State<FunFeatureButton> {
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.emoji, style: const TextStyle(fontSize: 26)),
-                const Spacer(),
-                Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.notoSansKr(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                    color: AppTheme.ink,
-                  ),
-                ),
-                Text(
-                  widget.blurb,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.notoSansKr(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.ink.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxHeight < 72;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      widget.icon ?? Icons.auto_awesome_outlined,
+                      color: AppTheme.onAccent,
+                      size: compact ? 18 : 26,
+                    ),
+                    if (compact) const SizedBox(height: 4) else const Spacer(),
+                    Text(
+                      widget.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.notoSansKr(
+                        fontWeight: FontWeight.w900,
+                        fontSize: compact ? 13 : 14,
+                        color: AppTheme.onAccent,
+                      ),
+                    ),
+                    if (!compact)
+                      Text(
+                        widget.blurb,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.notoSansKr(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.onAccent.withValues(alpha: 0.72),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ),

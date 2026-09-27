@@ -1,11 +1,11 @@
 {
-    "name": "MYB Voice Secretary",
-    "short_name": "MYB Voice",
+    "name": "AI 음성 비서",
+    "short_name": "AI Voice",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFF6EF",
-    "theme_color": "#FF8BA7",
-    "description": "밝고 즐거운 파스텔 톤 음성 비서.",
+    "background_color": "#070B18",
+    "theme_color": "#7C3AED",
+    "description": "딥 블루와 네온 퍼플의 AI 음성 비서.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

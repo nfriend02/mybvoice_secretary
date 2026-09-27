@@ -29,5 +29,41 @@ service cloud.firestore {
       allow create, update: if hasStatus();
       allow delete: if true;
     }
+
+    match /schedules/{docId} {
+      allow read: if true;
+      allow create, update: if hasStatus();
+      allow delete: if true;
+    }
+
+    match /drafts/{docId} {
+      allow read: if true;
+      allow create, update: if hasStatus();
+      allow delete: if true;
+    }
+
+    match /translations/{docId} {
+      allow read: if true;
+      allow create, update: if hasStatus();
+      allow delete: if true;
+    }
+
+    match /workflows/{docId} {
+      allow read: if true;
+      allow create, update: if hasStatus();
+      allow delete: if true;
+    }
+
+    match /study_cards/{docId} {
+      allow read: if true;
+      allow create, update: if hasStatus();
+      allow delete: if true;
+    }
+
+    match /live_queries/{docId} {
+      allow read: if true;
+      allow create, update: if hasStatus();
+      allow delete: if true;
+    }
   }
 }

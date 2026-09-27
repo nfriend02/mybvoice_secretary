@@ -6,9 +6,11 @@ import '../../app/theme/app_theme.dart';
 import '../config/breakpoints.dart';
 import '../config/nav_catalog.dart';
 import '../widgets/secretary_logo.dart';
+import '../widgets/theme_toggle_button.dart';
+import '../widgets/voice_dock.dart';
 
 /// Desktop (≥769): left sidebar + main content.
-/// Mobile (≤768): one horizontal menu + main content.
+/// Mobile (≤768): two rows of tabs, then the main content.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child, required this.location});
 
@@ -31,10 +33,7 @@ class AppShell extends StatelessWidget {
                   _Sidebar(location: location),
                   Expanded(
                     child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 12, 20, 16),
-                        child: child,
-                      ),
+                      child: _Stage(location: location, child: child),
                     ),
                   ),
                 ],
@@ -45,16 +44,19 @@ class AppShell extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-                    child: SecretaryLogo(compact: true),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 12, 4),
+                    child: Row(
+                      children: const [
+                        SecretaryLogo(size: SecretaryLogoSize.bar),
+                        Spacer(),
+                        ThemeToggleButton(),
+                      ],
+                    ),
                   ),
                   _MobileNav(location: location),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-                      child: child,
-                    ),
+                    child: _Stage(location: location, child: child),
                   ),
                 ],
               ),
@@ -76,16 +78,18 @@ class _Sidebar extends StatelessWidget {
     return Container(
       key: const Key('desktop-sidebar'),
       width: 248,
-      decoration: const BoxDecoration(
-        color: Color(0xF7FFFFFF),
-        border: Border(right: BorderSide(color: AppTheme.border)),
+      decoration: BoxDecoration(
+        color: AppTheme.sidebar,
+        border: Border(
+          right: BorderSide(color: AppTheme.neon.withValues(alpha: 0.28)),
+        ),
       ),
       child: SafeArea(
         child: Column(
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: SecretaryLogo(compact: true),
+              child: SecretaryLogo(size: SecretaryLogoSize.rail),
             ),
             Expanded(
               child: ListView(
@@ -110,18 +114,33 @@ class _MobileNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final split = (shellNav.length / 2).ceil();
+    final rows = [shellNav.sublist(0, split), shellNav.sublist(split)];
+    return Padding(
       key: const Key('mobile-nav'),
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        itemCount: shellNav.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final item = shellNav[index];
-          return _NavChip(item: item, location: location);
-        },
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      child: Column(
+        children: [
+          for (var row = 0; row < rows.length; row++) ...[
+            if (row > 0) const SizedBox(height: 6),
+            SizedBox(
+              height: 40,
+              child: Row(
+                children: [
+                  for (var index = 0; index < rows[row].length; index++) ...[
+                    if (index > 0) const SizedBox(width: 6),
+                    Expanded(
+                      child: _NavChip(
+                        item: rows[row][index],
+                        location: location,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -139,7 +158,9 @@ class _NavTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
-        color: selected ? item.color : Colors.transparent,
+        color: selected
+            ? item.color.withValues(alpha: 0.2)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -148,7 +169,7 @@ class _NavTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Text(item.emoji, style: const TextStyle(fontSize: 18)),
+                Icon(item.icon, size: 20, color: item.color),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -178,29 +199,82 @@ class _NavChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = _selected(item, location);
     return Material(
-      color: selected ? item.color : Colors.white,
+      color: AppTheme.chipFill(selected),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
         onTap: () => context.go(item.path),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
           alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? Colors.white : AppTheme.border,
+              color: AppTheme.chipBorder(selected),
+              width: selected ? 1.4 : 1,
             ),
           ),
-          child: Text(
-            '${item.emoji} ${item.label}',
-            style: GoogleFonts.notoSansKr(
-              fontWeight: FontWeight.w800,
-              fontSize: 12.5,
-              color: AppTheme.ink,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(item.icon, size: 14, color: item.color),
+              const SizedBox(width: 3),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    style: GoogleFonts.notoSansKr(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      color: AppTheme.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Stage extends StatelessWidget {
+  const _Stage({required this.location, required this.child});
+
+  final String location;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final here = location == '/talk';
+    final desktop = Breakpoints.isDesktop(MediaQuery.sizeOf(context).width);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 16, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const Key('talk-shortcut'),
+                    onPressed: here ? null : () => context.go('/talk'),
+                    icon: const Icon(Icons.notes_outlined, size: 18),
+                    label: Text(here ? '이 화면에서 대화를 요약해요' : '대화 요약 바로가기'),
+                  ),
+                ),
+              ),
+              if (desktop) const ThemeToggleButton(),
+            ],
+          ),
+          Expanded(child: child),
+          const VoiceDock(),
+        ],
       ),
     );
   }

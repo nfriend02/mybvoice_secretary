@@ -15,12 +15,12 @@ class FirestoreService {
       _db.collection(path);
 
   /// Example helper used by [UploadPage] for PDF metadata.
-  Future<void> uploadFileMetadata(
+  Future<String> uploadFileMetadata(
     String fileName,
     String status, {
     Map<String, dynamic> extra = const {},
   }) async {
-    await _db.collection('uploads').add({
+    final ref = await _db.collection('uploads').add({
       'fileName': fileName,
       'kind': 'upload',
       'title': fileName,
@@ -30,6 +30,7 @@ class FirestoreService {
       'updatedAt': FieldValue.serverTimestamp(),
       ...extra,
     });
+    return ref.id;
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getUploads() {

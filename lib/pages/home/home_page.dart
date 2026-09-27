@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../services/secretary_session.dart';
+import '../../shared/config/breakpoints.dart';
 import '../../shared/config/nav_catalog.dart';
-import '../../shared/widgets/fun_feature_button.dart';
 import '../../shared/widgets/feature_scaffold.dart';
 import '../../shared/widgets/scroll_paged_list.dart';
 import '../../shared/widgets/secretary_logo.dart';
@@ -20,58 +20,30 @@ class HomePage extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 720;
-        final tight = constraints.maxHeight < 680;
-        final buttonHeight = tight ? 78.0 : 104.0;
+        final desktop = Breakpoints.isDesktop(MediaQuery.sizeOf(context).width);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SecretaryLogo(compact: tight),
+            const SecretaryLogo(size: SecretaryLogoSize.hero),
             const SizedBox(height: 6),
             Text(
-              '말하고, 요약하고, 다시 찾는 파스텔 비서',
+              '말하면 정리해 드릴게요.',
               style: GoogleFonts.notoSansKr(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.muted,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.ink,
               ),
             ),
-            const SizedBox(height: 12),
-            if (wide)
-              SizedBox(
-                height: buttonHeight,
-                child: Row(
-                  children: [
-                    for (var i = 0; i < featureNav.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 10),
-                      Expanded(child: _featureButton(context, featureNav[i])),
-                    ],
-                  ],
-                ),
-              )
-            else ...[
-              SizedBox(
-                height: buttonHeight,
-                child: Row(
-                  children: [
-                    Expanded(child: _featureButton(context, featureNav[0])),
-                    const SizedBox(width: 10),
-                    Expanded(child: _featureButton(context, featureNav[1])),
-                  ],
+            if (desktop)
+              Text(
+                '필요한 정보를 빠르게 찾아드립니다.',
+                style: GoogleFonts.notoSansKr(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.muted,
                 ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: buttonHeight,
-                child: Row(
-                  children: [
-                    Expanded(child: _featureButton(context, featureNav[2])),
-                    const SizedBox(width: 10),
-                    Expanded(child: _featureButton(context, featureNav[3])),
-                  ],
-                ),
-              ),
-            ],
             const SizedBox(height: 12),
+            _HomeMenuGrid(desktop: desktop),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Text(
@@ -79,10 +51,7 @@ class HomePage extends StatelessWidget {
                   style: GoogleFonts.notoSansKr(fontWeight: FontWeight.w900),
                 ),
                 const Spacer(),
-                TextButton(
-                  onPressed: session.fillPracticeNotes,
-                  child: const Text('연습 기록 12개'),
-                ),
+                const RecordDeleteButton(),
               ],
             ),
             Expanded(
@@ -98,14 +67,105 @@ class HomePage extends StatelessWidget {
       },
     );
   }
+}
 
-  Widget _featureButton(BuildContext context, NavItem item) {
-    return FunFeatureButton(
-      label: item.label,
-      emoji: item.emoji,
-      color: item.color,
-      blurb: item.blurb,
-      onTap: () => context.go(item.path),
+class _HomeMenuGrid extends StatelessWidget {
+  const _HomeMenuGrid({required this.desktop});
+
+  final bool desktop;
+
+  @override
+  Widget build(BuildContext context) {
+    final columns = desktop ? 2 : 3;
+    final rows = <Widget>[];
+    for (var index = 0; index < homeMenus.length; index += columns) {
+      final slice = homeMenus.skip(index).take(columns).toList();
+      rows.add(
+        Row(
+          children: [
+            for (var column = 0; column < columns; column++) ...[
+              if (column > 0) const SizedBox(width: 8),
+              Expanded(
+                child: column < slice.length
+                    ? _HomeMenuTile(item: slice[column], desktop: desktop)
+                    : const SizedBox(height: 44),
+              ),
+            ],
+          ],
+        ),
+      );
+      if (index + columns < homeMenus.length) {
+        rows.add(const SizedBox(height: 8));
+      }
+    }
+    return Column(
+      key: Key(desktop ? 'home-menu-2' : 'home-menu-3'),
+      children: rows,
+    );
+  }
+}
+
+class _HomeMenuTile extends StatelessWidget {
+  const _HomeMenuTile({required this.item, required this.desktop});
+
+  final NavItem item;
+  final bool desktop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.menuFill,
+      borderRadius: BorderRadius.circular(desktop ? 16 : 999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(desktop ? 16 : 999),
+        onTap: () => context.go(item.path),
+        child: Container(
+          height: desktop ? 58 : 44,
+          padding: EdgeInsets.symmetric(horizontal: desktop ? 12 : 8),
+          alignment: Alignment.centerLeft,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(desktop ? 16 : 999),
+            border: Border.all(color: item.color.withValues(alpha: 0.55)),
+          ),
+          child: Row(
+            children: [
+              Icon(item.icon, size: desktop ? 20 : 16, color: item.color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.notoSansKr(
+                        fontWeight: FontWeight.w800,
+                        fontSize: desktop ? 14 : 12,
+                        color: AppTheme.ink,
+                        height: 1.1,
+                      ),
+                    ),
+                    if (desktop)
+                      Text(
+                        item.blurb,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.notoSansKr(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.muted,
+                          height: 1.1,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

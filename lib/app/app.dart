@@ -4,14 +4,21 @@ import 'package:provider/provider.dart';
 
 import '../pages/conversation/conversation_page.dart';
 import '../pages/home/home_page.dart';
+import '../pages/learn/learn_page.dart';
+import '../pages/live/live_page.dart';
+import '../pages/mail/mail_page.dart';
 import '../pages/pdf_summary/pdf_summary_page.dart';
 import '../pages/rag_search/rag_search_page.dart';
+import '../pages/schedule/schedule_page.dart';
+import '../pages/translate/translate_page.dart';
 import '../pages/upload/upload_page.dart';
 import '../pages/voice_chat/voice_chat_page.dart';
+import '../pages/workflow/workflow_page.dart';
 import '../services/firestore_service.dart';
 import '../services/secretary_session.dart';
 import '../shared/layouts/app_shell.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_controller.dart';
 
 class MyBVoiceSecretaryApp extends StatefulWidget {
   const MyBVoiceSecretaryApp({super.key, required this.firebaseReady});
@@ -25,6 +32,7 @@ class MyBVoiceSecretaryApp extends StatefulWidget {
 class _MyBVoiceSecretaryAppState extends State<MyBVoiceSecretaryApp> {
   late final FirestoreService? _firestore;
   late final SecretarySession _session;
+  late final ThemeController _theme;
   late final GoRouter _router;
 
   @override
@@ -32,6 +40,7 @@ class _MyBVoiceSecretaryAppState extends State<MyBVoiceSecretaryApp> {
     super.initState();
     _firestore = widget.firebaseReady ? FirestoreService() : null;
     _session = SecretarySession(_firestore);
+    _theme = ThemeController();
     _session.hydrate();
     _router = GoRouter(
       initialLocation: '/',
@@ -45,6 +54,15 @@ class _MyBVoiceSecretaryAppState extends State<MyBVoiceSecretaryApp> {
             GoRoute(path: '/pdf', builder: (_, _) => const UploadPage()),
             GoRoute(path: '/talk', builder: (_, _) => const ConversationPage()),
             GoRoute(path: '/rag', builder: (_, _) => const RagSearchPage()),
+            GoRoute(path: '/schedule', builder: (_, _) => const SchedulePage()),
+            GoRoute(path: '/mail', builder: (_, _) => const MailPage()),
+            GoRoute(
+              path: '/translate',
+              builder: (_, _) => const TranslatePage(),
+            ),
+            GoRoute(path: '/workflow', builder: (_, _) => const WorkflowPage()),
+            GoRoute(path: '/learn', builder: (_, _) => const LearnPage()),
+            GoRoute(path: '/live', builder: (_, _) => const LivePage()),
             GoRoute(
               path: '/upload',
               builder: (_, _) => const PortfolioUploadPage(),
@@ -59,6 +77,7 @@ class _MyBVoiceSecretaryAppState extends State<MyBVoiceSecretaryApp> {
   void dispose() {
     _router.dispose();
     _session.dispose();
+    _theme.dispose();
     super.dispose();
   }
 
@@ -66,14 +85,20 @@ class _MyBVoiceSecretaryAppState extends State<MyBVoiceSecretaryApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<ThemeController>.value(value: _theme),
         Provider<bool>.value(value: widget.firebaseReady),
         ChangeNotifierProvider<SecretarySession>.value(value: _session),
       ],
-      child: MaterialApp.router(
-        title: 'MYB Voice Secretary',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        routerConfig: _router,
+      child: ListenableBuilder(
+        listenable: _theme,
+        builder: (context, _) {
+          return MaterialApp.router(
+            title: 'AI 음성 비서',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.themeData(),
+            routerConfig: _router,
+          );
+        },
       ),
     );
   }

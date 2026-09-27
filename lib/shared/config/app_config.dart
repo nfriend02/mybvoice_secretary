@@ -31,6 +31,20 @@ class AppConfig {
 
   static String get vercelSiteUrl => _env('VERCEL_SITE_URL', defaultVercelUrl);
 
+  static String get openWeatherApiKey => _env('OPENWEATHER_API_KEY', '');
+
+  static String get exchangeRateApiKey => _env('EXCHANGE_RATE_API_KEY', '');
+
+  static String get geminiApiKey => _env('GEMINI_API_KEY', '');
+
+  static String get googleMapsApiKey => _env('YOUR_GOOGLE_MAPS_API_KEY', '');
+
+  static bool get hasLiveKeys =>
+      openWeatherApiKey.isNotEmpty &&
+      exchangeRateApiKey.isNotEmpty &&
+      geminiApiKey.isNotEmpty &&
+      googleMapsApiKey.isNotEmpty;
+
   static Map<String, String> uploadChecklistMeta() {
     return {
       'title': title,

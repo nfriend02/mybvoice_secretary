@@ -5,11 +5,12 @@ import '../../app/theme/app_theme.dart';
 import '../../features/pdf_summary/domain/pdf_text.dart';
 import '../../services/secretary_session.dart';
 import '../../shared/utils/pick_files.dart';
+import '../../shared/utils/text_tools.dart';
+import '../../shared/widgets/conversation_box.dart';
 import '../../shared/widgets/feature_scaffold.dart';
 import '../../shared/widgets/fun_feature_button.dart';
-import '../../shared/widgets/scroll_paged_list.dart';
 
-/// PDF upload example: pick a file, summarize, store metadata in Firestore.
+/// PDF upload example: pick a file or describe it, then keep asking.
 class UploadPage extends StatefulWidget {
   const UploadPage({super.key});
 
@@ -19,58 +20,94 @@ class UploadPage extends StatefulWidget {
 
 class _UploadPageState extends State<UploadPage> {
   bool _busy = false;
-  String? _note;
 
   Future<void> _pick() async {
     final picked = await pickDocument();
     if (!mounted || picked.isEmpty) return;
     final file = picked.first;
-    setState(() {
-      _busy = true;
-      _note = '요약하는 중…';
-    });
-    final text = PdfText.extract(file.bytes, file.name);
+    setState(() => _busy = true);
+    final extracted = PdfText.extract(file.bytes, file.name);
     final session = context.read<SecretarySession>();
-    final note = await session.savePdfSummary(fileName: file.name, text: text);
-    await session.add(
-      kind: 'upload',
-      title: file.name,
-      body: 'PDF 메타데이터 · ${file.bytes.length} bytes',
-      status: 'uploaded',
-      extra: {'size': file.bytes.length},
+    await session.replyTurn(
+      kind: 'pdf',
+      text: '${file.name} 요약해줘',
+      answer: (text, history) async {
+        final source = extracted.trim().isEmpty
+            ? '파일 ${file.name} 을 받았어요. 본문 텍스트는 추출되지 않았어요.'
+            : extracted.trim();
+        final summary = await session.summarize(
+          history.isEmpty ? source : '$history\n$source',
+        );
+        for (final chunk in textChunks(extracted)) {
+          await session.add(
+            kind: 'rag',
+            title: file.name,
+            body: chunk,
+            input: text,
+            output: chunk,
+          );
+        }
+        await session.add(
+          kind: 'upload',
+          title: file.name,
+          body: 'PDF 메타데이터 · ${file.bytes.length} bytes',
+          status: 'uploaded',
+          input: text,
+          output: 'PDF 메타데이터 · ${file.bytes.length} bytes',
+          extra: {'size': file.bytes.length},
+        );
+        return summary;
+      },
     );
     if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _note = note;
-    });
+    setState(() => _busy = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final records = context.watch<SecretarySession>().ofKind('pdf');
+    final session = context.watch<SecretarySession>();
     return FeatureScaffold(
       title: 'PDF 요약',
-      subtitle: '파일을 올리면 핵심 문장을 남겨요',
-      emoji: '📄',
+      subtitle: '파일을 올리거나, 본문을 말하며 이어서 물어볼 수 있어요',
+      icon: Icons.description_outlined,
       accent: AppTheme.sky,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FunActionButton(
-            label: 'PDF 올리기',
-            emoji: '📎',
-            busy: _busy,
-            onPressed: _pick,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FunActionButton(
+              label: 'PDF 올리기',
+              emoji: '📎',
+              busy: _busy,
+              onPressed: _busy ? null : _pick,
+            ),
           ),
-          if (_note != null) ...[const SizedBox(height: 8), Text(_note!)],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Expanded(
-            child: ScrollPagedList<SecretaryRecord>(
-              items: records,
+            child: ConversationBox(
+              records: session.ofKind('pdf'),
+              hint: '요약할 문장을 붙여 넣거나 말해 보세요',
+              tint: AppTheme.sky,
               emptyMessage: '아직 요약한 PDF가 없어요.',
-              itemBuilder: (_, record, _) =>
-                  RecordTile(record: record, tint: AppTheme.sky),
+              onSubmit: (text) => session.replyTurn(
+                kind: 'pdf',
+                text: text,
+                answer: (text, history) async {
+                  final source = history.isEmpty ? text : '$history\n$text';
+                  final summary = await session.summarize(source);
+                  for (final chunk in textChunks(text)) {
+                    await session.add(
+                      kind: 'rag',
+                      title: 'PDF 대화',
+                      body: chunk,
+                      input: text,
+                      output: chunk,
+                    );
+                  }
+                  return summary.isEmpty ? text : summary;
+                },
+              ),
             ),
           ),
         ],

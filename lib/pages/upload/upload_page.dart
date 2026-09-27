@@ -6,9 +6,9 @@ import '../../app/theme/app_theme.dart';
 import '../../services/secretary_session.dart';
 import '../../shared/config/app_config.dart';
 import '../../shared/utils/pick_files.dart';
+import '../../shared/widgets/conversation_box.dart';
 import '../../shared/widgets/feature_scaffold.dart';
 import '../../shared/widgets/fun_feature_button.dart';
-import '../../shared/widgets/scroll_paged_list.dart';
 
 class PortfolioUploadPage extends StatefulWidget {
   const PortfolioUploadPage({super.key});
@@ -19,7 +19,6 @@ class PortfolioUploadPage extends StatefulWidget {
 
 class _PortfolioUploadPageState extends State<PortfolioUploadPage> {
   bool _busy = false;
-  String? _note;
 
   Future<void> _pick() async {
     final picked = await pickDocument();
@@ -27,18 +26,25 @@ class _PortfolioUploadPageState extends State<PortfolioUploadPage> {
     final file = picked.first;
     setState(() => _busy = true);
     final meta = AppConfig.uploadChecklistMeta();
-    final note = await context.read<SecretarySession>().add(
+    final session = context.read<SecretarySession>();
+    await session.replyTurn(
       kind: 'upload',
-      title: file.name,
-      body: '업로드 체크리스트와 함께 저장',
-      status: 'uploaded',
-      extra: {'size': file.bytes.length, 'meta': meta},
+      text: '${file.name} 저장해줘',
+      answer: (text, _) async {
+        await session.add(
+          kind: 'upload',
+          title: file.name,
+          body: '업로드 체크리스트와 함께 저장',
+          status: 'uploaded',
+          input: text,
+          output: '업로드 체크리스트와 함께 저장 · ${file.bytes.length} bytes',
+          extra: {'size': file.bytes.length, 'meta': meta},
+        );
+        return '업로드 체크리스트와 함께 저장 · ${file.bytes.length} bytes';
+      },
     );
     if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _note = note;
-    });
+    setState(() => _busy = false);
   }
 
   @override
@@ -65,7 +71,7 @@ class _PortfolioUploadPageState extends State<PortfolioUploadPage> {
     return FeatureScaffold(
       title: '업로드',
       subtitle: '전시 체크리스트와 파일 메타데이터',
-      emoji: '☁️',
+      icon: Icons.cloud_upload_outlined,
       accent: AppTheme.butter,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,22 +128,35 @@ class _PortfolioUploadPageState extends State<PortfolioUploadPage> {
                   label: '파일 메타데이터 저장',
                   emoji: '🚀',
                   busy: _busy,
-                  onPressed: _pick,
+                  onPressed: _busy ? null : _pick,
                 ),
-                if (_note != null) ...[
-                  const SizedBox(height: 8),
-                  Text(_note!, style: GoogleFonts.notoSansKr()),
-                ],
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Expanded(
-            child: ScrollPagedList<SecretaryRecord>(
-              items: records,
+            child: ConversationBox(
+              records: records,
+              hint: '체크리스트를 물어보거나, 파일을 저장해 달라고 말해 보세요',
+              tint: AppTheme.butter,
               emptyMessage: '올린 파일 기록이 여기에 모여요.',
-              itemBuilder: (_, record, _) =>
-                  RecordTile(record: record, tint: AppTheme.butter),
+              onSubmit: (text) async {
+                if (text.contains('파일') || text.contains('업로드')) {
+                  await _pick();
+                  return;
+                }
+                final lines = checks
+                    .map(
+                      (check) =>
+                          '${check.$3 ? '완료' : '필요'} · ${check.$1} · ${check.$2}',
+                    )
+                    .join('\n');
+                await context.read<SecretarySession>().replyTurn(
+                  kind: 'upload',
+                  text: text,
+                  answer: (_, _) async => lines,
+                );
+              },
             ),
           ),
         ],

@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:mybvoice_secretary/app/app.dart';
+import 'package:mybvoice_secretary/app/theme/app_theme.dart';
 import 'package:mybvoice_secretary/features/pdf_summary/domain/pdf_text.dart';
 import 'package:mybvoice_secretary/features/rag_search/domain/rag_ranker.dart';
 import 'package:mybvoice_secretary/features/voice_chat/domain/secretary_reply.dart';
@@ -116,7 +118,10 @@ void main() {
 
     expect(find.byKey(const Key('desktop-sidebar')), findsOneWidget);
     expect(find.byKey(const Key('mobile-nav')), findsNothing);
-    expect(find.text('MYB'), findsWidgets);
+    expect(find.byKey(const Key('home-menu-2')), findsOneWidget);
+    expect(find.byKey(const Key('home-menu-3')), findsNothing);
+    expect(find.text('AI 음성 비서'), findsWidgets);
+    expect(find.text('AI VOICE SECRETARY'), findsWidgets);
     expect(find.text('음성 비서'), findsWidgets);
   });
 
@@ -131,6 +136,33 @@ void main() {
 
     expect(find.byKey(const Key('mobile-nav')), findsOneWidget);
     expect(find.byKey(const Key('desktop-sidebar')), findsNothing);
+    expect(find.byKey(const Key('home-menu-3')), findsOneWidget);
+    expect(find.byKey(const Key('home-menu-2')), findsNothing);
+    expect(find.text('낮'), findsOneWidget);
+  });
+
+  testWidgets('theme toggle switches the screen to day and back to night', (
+    tester,
+  ) async {
+    addTearDown(() => AppTheme.dark = true);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1100, 900);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MyBVoiceSecretaryApp(firebaseReady: false));
+    await tester.pump();
+
+    expect(find.text('낮'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('theme-toggle')));
+    await tester.pump();
+    expect(AppTheme.dark, isFalse);
+    expect(find.text('밤'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('theme-toggle')));
+    await tester.pump();
+    expect(AppTheme.dark, isTrue);
+    expect(find.text('낮'), findsOneWidget);
   });
 
   testWidgets('practice notes page in batches of 10', (tester) async {
@@ -141,11 +173,39 @@ void main() {
 
     await tester.pumpWidget(const MyBVoiceSecretaryApp(firebaseReady: false));
     await tester.pump();
-    await tester.tap(find.text('연습 기록 12개'));
+    expect(find.text('연습 기록 12개'), findsNothing);
+    tester
+        .element(find.text('최근 기록'))
+        .read<SecretarySession>()
+        .fillPracticeNotes();
     await tester.pump();
 
     expect(find.text('10 / 12 · 10개씩'), findsOneWidget);
     expect(find.text('연습 메모 12'), findsOneWidget);
     expect(find.text('연습 메모 1'), findsNothing);
+  });
+
+  testWidgets('기록 삭제 removes the checked record', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1100, 900);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MyBVoiceSecretaryApp(firebaseReady: false));
+    await tester.pump();
+    tester
+        .element(find.text('최근 기록'))
+        .read<SecretarySession>()
+        .fillPracticeNotes();
+    await tester.pump();
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pump();
+    await tester.tap(find.text('기록 삭제').first);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('연습 메모 12'), findsNothing);
+    expect(find.text('연습 메모 11'), findsOneWidget);
   });
 }

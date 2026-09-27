@@ -11,12 +11,22 @@ lib/
 │   ├── pdf_summary/pdf_summary_page.dart   # class UploadPage
 │   ├── conversation/conversation_page.dart
 │   ├── rag_search/rag_search_page.dart
+│   ├── schedule/schedule_page.dart
+│   ├── mail/mail_page.dart
+│   ├── translate/translate_page.dart
+│   ├── workflow/workflow_page.dart
+│   ├── learn/learn_page.dart
 │   └── upload/upload_page.dart             # class PortfolioUploadPage
 ├── features/
 │   ├── voice_chat/
 │   ├── pdf_summary/
-│   ├── conversation/                       # screen lives in pages/
-│   └── rag_search/
+│   ├── conversation/
+│   ├── rag_search/
+│   ├── schedule/
+│   ├── mail/
+│   ├── translate/
+│   ├── workflow/
+│   └── learn/
 ├── services/
 │   ├── firestore_service.dart
 │   ├── auth_service.dart
