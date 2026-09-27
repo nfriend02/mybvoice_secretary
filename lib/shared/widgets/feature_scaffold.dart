@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -112,37 +113,66 @@ class RecordTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  record.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.notoSansKr(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  record.body,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.notoSansKr(
-                    color: AppTheme.muted,
-                    height: 1.4,
+                SelectionArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        record.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.notoSansKr(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        record.body,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.notoSansKr(
+                          color: AppTheme.muted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      final note = await saveTextFile(
-                        '${record.title}.txt',
-                        '${record.title}\n\n${record.body}',
-                      );
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(note)));
-                    },
-                    icon: const Icon(Icons.download_outlined, size: 18),
-                    label: const Text('다운로드'),
+                  child: Wrap(
+                    spacing: 4,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(
+                              text: '${record.title}\n${record.body}',
+                            ),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('복사했어요')),
+                          );
+                        },
+                        icon: const Icon(Icons.copy_outlined, size: 18),
+                        label: const Text('복사'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final note = await saveTextFile(
+                            '${record.title}.txt',
+                            '${record.title}\n\n${record.body}',
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(content: Text(note)));
+                        },
+                        icon: const Icon(Icons.download_outlined, size: 18),
+                        label: const Text('다운로드'),
+                      ),
+                    ],
                   ),
                 ),
               ],

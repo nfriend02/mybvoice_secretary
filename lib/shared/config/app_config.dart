@@ -8,7 +8,7 @@ class AppConfig {
   static const String defaultAuthor = 'MyBranch Team';
   static const String defaultIconUrl = '/icons/Icon-512.png';
   static const String defaultGithubUrl =
-      'https://github.com/nfriend02/mybvoice_secretary';
+      'https://github.com/nfriend02/mybvoice_secretary/tree/feature/hswarehouse-upload';
   static const String defaultVercelUrl =
       'https://mybvoice-secretary.vercel.app';
 

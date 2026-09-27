@@ -63,7 +63,7 @@ Supabase를 붙일 때는 `id`, `created_at` 인덱스를 기본으로 둡니다
 
 ### 업로드 체크리스트
 
-- [x] Github branch URL: https://github.com/nfriend02/mybvoice_secretary
+- [x] Github branch URL: https://github.com/nfriend02/mybvoice_secretary/tree/feature/hswarehouse-upload
 - [x] 아이콘: `web/icons/Icon-512.png` (`/icons/Icon-512.png`)
 - [x] 설명 200자 이내 (`APP_DESCRIPTION`)
 - [x] 제작자/팀명: MyBranch Team
