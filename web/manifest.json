@@ -1,0 +1,35 @@
+{
+    "name": "MYB Voice Secretary",
+    "short_name": "MYB Voice",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#FFF6EF",
+    "theme_color": "#FF8BA7",
+    "description": "밝고 즐거운 파스텔 톤 음성 비서.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
