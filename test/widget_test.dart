@@ -199,7 +199,10 @@ void main() {
         .fillPracticeNotes();
     await tester.pump();
 
-    await tester.tap(find.byType(Checkbox).first);
+    final checkbox = find.byType(Checkbox).first;
+    await tester.ensureVisible(checkbox);
+    await tester.pump();
+    await tester.tap(checkbox);
     await tester.pump();
     await tester.tap(find.text('기록 삭제').first);
     await tester.pump();

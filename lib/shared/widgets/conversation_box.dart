@@ -80,15 +80,6 @@ class _ConversationBoxState extends State<ConversationBox> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: ScrollPagedList<SecretaryRecord>(
-            items: widget.records,
-            emptyMessage: widget.emptyMessage,
-            itemBuilder: (_, record, _) =>
-                RecordTile(record: record, tint: widget.tint),
-          ),
-        ),
-        const SizedBox(height: 8),
         Container(
           key: const Key('talk-input'),
           padding: const EdgeInsets.fromLTRB(10, 4, 8, 8),
@@ -146,6 +137,15 @@ class _ConversationBoxState extends State<ConversationBox> {
                 ],
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ScrollPagedList<SecretaryRecord>(
+            items: widget.records,
+            emptyMessage: widget.emptyMessage,
+            itemBuilder: (_, record, _) =>
+                RecordTile(record: record, tint: widget.tint),
           ),
         ),
       ],

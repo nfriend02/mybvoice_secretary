@@ -7,7 +7,6 @@ import '../config/breakpoints.dart';
 import '../config/nav_catalog.dart';
 import '../widgets/secretary_logo.dart';
 import '../widgets/theme_toggle_button.dart';
-import '../widgets/voice_dock.dart';
 
 /// Desktop (≥769): left sidebar + main content.
 /// Mobile (≤768): two rows of tabs, then the main content.
@@ -273,7 +272,6 @@ class _Stage extends StatelessWidget {
             ],
           ),
           Expanded(child: child),
-          const VoiceDock(),
         ],
       ),
     );
